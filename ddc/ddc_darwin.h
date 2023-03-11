@@ -3,6 +3,6 @@
 
 typedef const void *IOAVServiceRef;
 IOAVServiceRef findDisplay(int index);
-void sendDDC(IOAVServiceRef display, unsigned char command, int setValue);
+int sendDDC(IOAVServiceRef display, unsigned char command, int setValue);
 
 #endif

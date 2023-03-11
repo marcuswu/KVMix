@@ -1,6 +1,6 @@
-@import Darwin;
-@import Foundation;
-@import IOKit;
+// #import "Darwin"
+#import <Foundation/Foundation.h>
+#import <IOKit/IOKitLib.h>
 
 #include "ddc_darwin.h"
 
@@ -34,25 +34,19 @@ IOAVServiceRef findDisplay(int index) {
 
     int i = index;
     io_service_t display;
-    CFStringRef locationKey = CFStringCreateWithCString(kCFAllocatorDefault, "Location", kCFStringEncodingASCII);
     while(i >= 0) {
         display = IOIteratorNext(displays);
-        int res = IORegistryEntryGetPath(display, kIOServicePlane, path);
-        printf("IORegistry path: %s\n", path);
         i--;
-        if (i >= 0) {
+        if (i > 0) {
             IOObjectRelease(display);
         }
     }
     displayRef = IOAVServiceCreateWithService(kCFAllocatorDefault, display);
-    CFStringRef location = IORegistryEntrySearchCFProperty(display, kIOServicePlane, locationKey, kCFAllocatorDefault, kIORegistryIterateRecursively);
-    printf("Display location: %s\n", [(NSString *)location UTF8String]);
     IOObjectRelease(display);
-    CFRelease(locationKey);
     return displayRef;
 }
 
-void sendDDC(IOAVServiceRef display, UInt8 command, int setValue) int {
+int sendDDC(IOAVServiceRef display, UInt8 command, int setValue) {
     UInt8 data[6];
     memset(data, 0, sizeof(data));
 
@@ -69,8 +63,10 @@ void sendDDC(IOAVServiceRef display, UInt8 command, int setValue) int {
         IOReturn err = IOAVServiceWriteI2C(display, 0x37, 0x51, data, 6);
 
         if (err) {
-            return err
+            return err;
         }
 
     }
+
+    return 0;
 }
