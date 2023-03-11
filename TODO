@@ -1,0 +1,8 @@
+- [ ] Check electronics bin for audio jacks
+- [ ] Iterate processes on Windows, Linux, OSX, produce Process interface compatible object
+    - [ ] Use github.com/mitchellh/go-ps, github.com/go-ole/go-ole and github.com/moutend/go-wca for windows
+    - [ ] Use github.com/jfreymuth/pulse/proto on Linux
+    - [ ] Copy what I had done in my deej fork for OSX
+- [ ] Find available serial ports, connect to SmartKnob
+- [ ] Configure SmartKnob menu options based on processes and local config
+- [x] Add ddc tools for OSX and linux into a cross-platform go version
