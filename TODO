@@ -1,6 +1,7 @@
 - [ ] Check electronics bin for audio jacks
 - [ ] Iterate processes on Windows, Linux, OSX, produce Process interface compatible object
     - [ ] Use github.com/mitchellh/go-ps, github.com/go-ole/go-ole and github.com/moutend/go-wca for windows
+        - [ ] go-wca handles audio volume changes
     - [ ] Use github.com/jfreymuth/pulse/proto on Linux
     - [ ] Copy what I had done in my deej fork for OSX
 - [ ] Find available serial ports, connect to SmartKnob
