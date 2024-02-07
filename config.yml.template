@@ -1,0 +1,26 @@
+# For the computer display field, use the number preceding one of the following input sources:
+# 1: VGA1
+# 2: VGA2
+# 3: DVI1
+# 4: DVI2
+# 5: COMPOSITE_VIDEO1
+# 6: COMPOSITE_VIDEO2
+# 7: SVIDEO1
+# 8: SVIDEO2
+# 9: TUNER1
+# 10: TUNER2
+# 11: TUNER3
+# 12: COMPONENT_VIDEO1
+# 13: COMPONENT_VIDEO2
+# 14: COMPONENT_VIDEO3
+# 15: DISPLAY_PORT1
+# 16: DISPLAY_PORT2
+# 17: HDMI1
+# 18: HDMI2
+
+apps:
+ - { display_name: "Discord", app_identifier: "discord.exe" }
+ - { display_name: "Zoom", app_identifier: "zoom.exe" }
+computers:
+ - { name: "Work", monitor_index: 1 display: 17, Pin: "12" }
+ - { name: "Gaming", monitor_index: 0, display: 15, Pin: "13" }
