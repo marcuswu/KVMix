@@ -30,3 +30,15 @@ type Config struct {
 	VolumeApps []VolumeApp `yaml:"apps"`
 	Computers  []Computer
 }
+
+type VolumeAppList []VolumeApp
+
+func (val VolumeAppList) ToMatchMap() map[string]interface{} {
+	ret := make(map[string]interface{})
+
+	for _, app := range val {
+		ret[app.Identifier] = nil
+	}
+
+	return ret
+}

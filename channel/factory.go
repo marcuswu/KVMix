@@ -1,5 +1,5 @@
 package channel
 
 type ChannelFactory interface {
-	Channels() ([]Channel, error)
+	ChannelsMatching(map[string]interface{}) ([]Channel, error)
 }

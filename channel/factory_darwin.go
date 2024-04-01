@@ -13,15 +13,17 @@ func New() ChannelFactory {
 	return DarwinChannelFactory{}
 }
 
-func (dcf DarwinChannelFactory) Channels() ([]Channel, error) {
+func (dcf DarwinChannelFactory) ChannelsMatching(ids map[string]interface{}) ([]Channel, error) {
 	apps := runningApplications()
 	channels := make([]Channel, 0, len(apps))
 
 	channels = append(channels, DarwinMainChannel{name: "Main Volume"})
 
 	for _, name := range apps {
-		channel := DarwinChannel{name: name}
-		channels = append(channels, channel)
+		if _, ok := ids[name]; ok {
+			channel := DarwinChannel{name: name}
+			channels = append(channels, channel)
+		}
 	}
 	return channels, nil
 }

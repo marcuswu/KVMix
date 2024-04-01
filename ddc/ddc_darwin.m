@@ -27,7 +27,7 @@ IOAVServiceRef findDisplay(int index) {
     io_iterator_t displays;
 
     kern_return_t ret = IOServiceGetMatchingServices(kIOMainPortDefault, matching, &displays);
-    if (ret != 0){
+    if (ret != KERN_SUCCESS){
         printf("Unable to find any displays!\n");
         return NULL;
     }

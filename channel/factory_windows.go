@@ -82,7 +82,7 @@ func (wcf WindowsChannelFactory) defaultAudioEndpoints() (*wca.IMMDevice, *wca.I
 	return outDevice, inDevice, nil
 }
 
-func (wcf WindowsChannelFactory) Channels() ([]Channel, error) {
+func (wcf WindowsChannelFactory) ChannelsMatching(ids map[string]interface{}) ([]Channel, error) {
 	if err := ole.CoInitializeEx(0, ole.COINIT_APARTMENTTHREADED); err != nil {
 		const oleFalse = 1
 		oleError := &ole.OleError{}
@@ -121,7 +121,7 @@ func (wcf WindowsChannelFactory) Channels() ([]Channel, error) {
 		}
 	}
 
-	appChannels, err := wcf.getChannels()
+	appChannels, err := wcf.getChannels(ids)
 	channels := make([]Channel, 0, len(appChannels)+1)
 	if err != nil {
 		return []Channel{}, fmt.Errorf("enumerate device sessions: %w", err)
@@ -159,7 +159,7 @@ func (wcf WindowsChannelFactory) getMainChannel(device *wca.IMMDevice) (*Windows
 	return main, nil
 }
 
-func (wcf WindowsChannelFactory) getChannels() ([]Channel, error) {
+func (wcf WindowsChannelFactory) getChannels(ids map[string]interface{}) ([]Channel, error) {
 	var deviceCollection *wca.IMMDeviceCollection
 
 	err := wcf.deviceEnumerator.EnumAudioEndpoints(wca.EAll, wca.DEVICE_STATE_ACTIVE, &deviceCollection)
@@ -200,7 +200,7 @@ func (wcf WindowsChannelFactory) getChannels() ([]Channel, error) {
 		}
 
 		if dataFlow == wca.ERender {
-			deviceChannels, err := wcf.enumerateDeviceChannels(endpoint)
+			deviceChannels, err := wcf.enumerateDeviceChannels(endpoint, ids)
 			if err != nil {
 				continue
 			}
@@ -220,6 +220,7 @@ func (wcf WindowsChannelFactory) getChannels() ([]Channel, error) {
 
 func (wcf WindowsChannelFactory) enumerateDeviceChannels(
 	endpoint *wca.IMMDevice,
+	ids map[string]interface{},
 ) ([]Channel, error) {
 	var audioSessionManager2 *wca.IAudioSessionManager2
 
@@ -295,7 +296,11 @@ func (wcf WindowsChannelFactory) enumerateDeviceChannels(
 		}
 
 		// add it to our slice
-		channels = append(channels, newChannel)
+		_, nameOk := ids[newChannel.name]
+		_, pnameOk := ids[newChannel.processName]
+		if nameOk || pnameOk {
+			channels = append(channels, newChannel)
+		}
 	}
 
 	return channels, nil
