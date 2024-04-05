@@ -51,6 +51,9 @@ func (cvm *ComputersViewModel) getPosition() int32 {
 }
 
 func (cvm *ComputersViewModel) setPosition(pos int32) {
+	if len(cvm.computers) <= int(pos) {
+		cvm.position = 0
+	}
 	cvm.position = pos
 }
 
@@ -70,7 +73,12 @@ func (cvm *ComputersViewModel) HandleMessage(state *pb.SmartKnobState) NavAction
 		ViewModel:   nil,
 		RegenConfig: false,
 	}
-	ret.RegenConfig = handleNonces(cvm, state)
+	handleNonces(cvm, state)
+	// The knob position has updated
+	if state.CurrentPosition != cvm.getPosition() {
+		cvm.setPosition(state.CurrentPosition)
+		ret.RegenConfig = true
+	}
 	if state.PressNonce != cvm.pressNonce {
 		ret.Navigation = NavBack
 		ret.pressNonce = state.PressNonce
@@ -95,8 +103,6 @@ func (cvm *ComputersViewModel) GenerateConfig() *pb.SmartKnobConfig {
 		title = fmt.Sprintf("Switch to %s", cvm.computers[cvm.position-1].Name)
 	}
 	return &pb.SmartKnobConfig{
-		Position:             cvm.position,
-		PositionNonce:        cvm.positionNonce,
 		MinPosition:          0,
 		MaxPosition:          int32(len(cvm.computers)),
 		PositionWidthRadians: (30 / 180.0) * math.Pi,

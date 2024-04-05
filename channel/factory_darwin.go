@@ -2,6 +2,7 @@ package channel
 
 import (
 	"github.com/progrium/macdriver/objc"
+	"golang.org/x/exp/maps"
 )
 
 const maxVolume = 100
@@ -29,12 +30,16 @@ func (dcf DarwinChannelFactory) ChannelsMatching(ids map[string]interface{}) ([]
 }
 
 func runningApplications() []string {
-	applications := []string{}
+	applications := make(map[string]struct{})
 	apps := objc.Get("NSWorkspace").Get("sharedWorkspace").Get("runningApplications")
 
 	for i := int64(0); i < apps.Get("count").Int(); i++ {
-		applications = append(applications, apps.Send("objectAtIndex:", i).Send("localizedName").String())
+		appName := apps.Send("objectAtIndex:", i).Send("localizedName").String()
+		if _, ok := applications[appName]; ok {
+			continue
+		}
+		applications[appName] = struct{}{}
 	}
 
-	return applications
+	return maps.Keys(applications)
 }

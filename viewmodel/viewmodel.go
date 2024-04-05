@@ -40,27 +40,11 @@ func restorePosition(vm ViewModel, state *pb.SmartKnobState) {
 	vm.setPressNonce(state.PressNonce)
 }
 
-func handleNonces(vm ViewModel, state *pb.SmartKnobState) bool {
-	ret := false
+func handleNonces(vm ViewModel, state *pb.SmartKnobState) {
 	// Initialize our nonces and positions
-	if !vm.getNonceSet() {
-		vm.setPressNonce(state.PressNonce)
-		// Update the position nonce so our position gets set to the knob
-		// Force the overwrite because we're on a new viewmodel / screen
-		vm.setPositionNonce(state.GetConfig().PositionNonce + 1)
-		vm.setNonceSet(true)
-		return false
+	if vm.getNonceSet() {
+		return
 	}
-	// The knob has a more recent position
-	if state.GetConfig().PositionNonce == vm.getPositionNonce() && state.CurrentPosition != vm.getPosition() {
-		vm.setPosition(state.CurrentPosition)
-		vm.setPositionNonce(state.GetConfig().PositionNonce)
-		ret = true
-	}
-	// The knob needs an updated position
-	if state.GetConfig().PositionNonce < vm.getPositionNonce() {
-		vm.setPositionNonce(state.GetConfig().PositionNonce + 1)
-		ret = true
-	}
-	return ret
+	vm.setPressNonce(state.PressNonce)
+	vm.setNonceSet(true)
 }

@@ -20,8 +20,14 @@ type VolumeViewModel struct {
 }
 
 func NewVolumeViewModel(pressNonce uint32, appChannel channel.Channel) *VolumeViewModel {
+	initialVolume, err := appChannel.GetVolume()
+	initialVolume *= 100
+	log.Debug().Int32("Initial Volume", int32(initialVolume)).Str("channel", appChannel.Name()).Msg("Volume ViewModel Initializer")
+	if err != nil {
+		log.Error().Err(err).Str("channel", appChannel.Name()).Msg("Error retrieving volume for channel")
+	}
 	return &VolumeViewModel{
-		position:          0,
+		position:          int32(initialVolume),
 		positionNonce:     0,
 		pressNonce:        0,
 		appChannel:        appChannel,
@@ -53,16 +59,13 @@ func (vvm *VolumeViewModel) getPosition() int32 {
 func (vvm *VolumeViewModel) setPosition(pos int32) {
 	vvm.position = pos
 	if vvm.updateVolumeTimer != nil {
-		log.Debug().Msg("Resetting volume timer")
-		vvm.updateVolumeTimer.Reset(time.Duration(250) * time.Millisecond)
-	} else {
-		log.Debug().Msg("Updating volume timer")
-		vvm.updateVolumeTimer = time.AfterFunc(time.Duration(250)*time.Millisecond, func() {
-			log.Debug().Int("volume", int(vvm.position)).Msg("Setting volume")
-			vvm.appChannel.SetVolume(float64(vvm.position) / 100.0)
-			vvm.updateVolumeTimer = nil
-		})
+		return
 	}
+	log.Debug().Int("volume", int(vvm.position)).Float64("float volume", float64(vvm.position)/100.0).Str("channel", vvm.appChannel.Name()).Msg("Setting volume")
+	vvm.appChannel.SetVolume(float64(vvm.position) / 100.0)
+	vvm.updateVolumeTimer = time.AfterFunc(time.Duration(250)*time.Millisecond, func() {
+		vvm.updateVolumeTimer = nil
+	})
 }
 
 func (vvm *VolumeViewModel) getPressNonce() uint32 {
@@ -81,8 +84,13 @@ func (vvm *VolumeViewModel) HandleMessage(state *pb.SmartKnobState) NavAction {
 		ViewModel:   nil,
 		RegenConfig: false,
 	}
-	// Don't set RegenConfig from handleNonces because the title doesn't change
-	handleNonces(vvm, state)
+	// We don't need to handle positionNonce (handleNonces) -- we aren't changing title
+	if !vvm.getNonceSet() {
+		handleNonces(vvm, state)
+		ret.RegenConfig = true
+		return ret
+	}
+	vvm.setPosition(state.CurrentPosition)
 	if state.PressNonce != vvm.pressNonce {
 		ret.Navigation = NavBack
 		ret.RegenConfig = true

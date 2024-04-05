@@ -50,6 +50,9 @@ func (vavm *VolumeAppViewModel) getPosition() int32 {
 }
 
 func (vavm *VolumeAppViewModel) setPosition(pos int32) {
+	if len(vavm.channels) <= int(pos) {
+		vavm.position = 0
+	}
 	vavm.position = pos
 }
 
@@ -69,7 +72,12 @@ func (vavm *VolumeAppViewModel) HandleMessage(state *pb.SmartKnobState) NavActio
 		ViewModel:   nil,
 		RegenConfig: false,
 	}
-	ret.RegenConfig = handleNonces(vavm, state)
+	handleNonces(vavm, state)
+	// The knob position has updated
+	if state.CurrentPosition != vavm.getPosition() {
+		vavm.setPosition(state.CurrentPosition)
+		ret.RegenConfig = true
+	}
 	if state.PressNonce != vavm.pressNonce {
 		ret.Navigation = NavBack
 		ret.pressNonce = state.PressNonce
@@ -93,8 +101,6 @@ func (vavm *VolumeAppViewModel) GenerateConfig() *pb.SmartKnobConfig {
 		title = vavm.channels[vavm.position-1].Name()
 	}
 	return &pb.SmartKnobConfig{
-		Position:             vavm.position,
-		PositionNonce:        vavm.positionNonce,
 		MinPosition:          0,
 		MaxPosition:          int32(len(vavm.channels)),
 		PositionWidthRadians: (30 / 180.0) * math.Pi,

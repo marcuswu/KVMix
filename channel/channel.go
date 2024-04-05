@@ -11,6 +11,6 @@ A Channel is simply something you can get and set volume on
 
 type Channel interface {
 	Name() string
-	GetVolume() float64
+	GetVolume() (float64, error)
 	SetVolume(float64) error
 }

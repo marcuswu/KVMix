@@ -1,43 +1,4 @@
-- [ ] Check electronics bin for audio jacks
-- [ ] Iterate processes on Windows, Linux, OSX, produce Process interface compatible object
-    - [x] Use github.com/mitchellh/go-ps, github.com/go-ole/go-ole and github.com/moutend/go-wca for windows
-        - [x] go-wca handles audio volume changes
-    - [ ] Use github.com/jfreymuth/pulse/proto on Linux
-    - [x] Copy what I had done in my deej fork for OSX
-- [x] Find available serial ports, connect to SmartKnob
-- [x] Configure SmartKnob menu options based on channels and local config
-- [x] Add ddc tools for OSX and linux into a cross-platform go version
-
 Current:
- * Connects to SmartKnob
- * ViewModels work
- * Navigation works (forwards and backwards)
- * Setting volume does not work (doesn't even call setPosition()
+ * Changing volume quickly can make KVMix hang
  * Changing computer does not work (calls DDC, but crashes on OSX)
-
-* Switch Computers
-  * Computer 1
-  * Computer 2
-  * ...
-* Change Volume
-  * Back
-  * Main Volume
-  * App Volume 1
-  * App Volume 2
-  * ...
-
-Displays needs to be configurable
-Need to be able to define a sort order for volumes.
-
-Config
-* List apps to handle volume for
-  * Display name
-  * App identifier
-* List computers to toggle between
-  * Name
-  * Display
-  * Pin
-
-Config
- * Read config
- * Export SmartKnobConfig
+ * Linux functionality is not started (use github.com/jfreymuth/pulse/proto)

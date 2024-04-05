@@ -2,6 +2,7 @@ package channel
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/progrium/macdriver/core"
 	"github.com/progrium/macdriver/objc"
@@ -15,14 +16,18 @@ func (ch DarwinMainChannel) Name() string {
 	return ch.name
 }
 
-func (ch DarwinMainChannel) GetVolume() float64 {
+func (ch DarwinMainChannel) GetVolume() (float64, error) {
 	var error *core.NSDictionary = nil
 	code := core.NSString_FromString("tell application \"Background Music\" to get output volume")
 	script := objc.Get("NSAppleScript").Alloc().Send("initWithSource:", code)
 	result := script.Send("executeAndReturnError:", &error)
-	volume := result.Float()
+	strVolume := result.Send("stringValue", nil).String()
+	volume, err := strconv.ParseFloat(strVolume, 64)
+	if err != nil {
+		return 0, err
+	}
 
-	return volume
+	return volume, nil
 }
 
 func (ch DarwinMainChannel) SetVolume(vol float64) error {
@@ -42,14 +47,18 @@ func (ch DarwinChannel) Name() string {
 	return ch.name
 }
 
-func (ch DarwinChannel) GetVolume() float64 {
+func (ch DarwinChannel) GetVolume() (float64, error) {
 	var error *core.NSDictionary = nil
 	code := core.NSString_FromString("tell application \"Background Music\" to get vol of (a reference to (the first audio application whose name is equal to \"" + ch.name + "\"))")
 	script := objc.Get("NSAppleScript").Alloc().Send("initWithSource:", code)
 	result := script.Send("executeAndReturnError:", &error)
-	volume := result.Float()
+	strVolume := result.Send("stringValue", nil).String()
+	volume, err := strconv.ParseFloat(strVolume, 64)
+	if err != nil {
+		return 0, err
+	}
 
-	return volume / maxVolume
+	return volume / maxVolume, nil
 }
 
 func (ch DarwinChannel) SetVolume(vol float64) error {

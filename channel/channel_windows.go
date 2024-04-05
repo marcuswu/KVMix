@@ -60,15 +60,15 @@ func (ch *WindowsChannel) Name() string {
 	return ch.name
 }
 
-func (ch *WindowsChannel) GetVolume() float64 {
+func (ch *WindowsChannel) GetVolume() (float64, error) {
 	var level float32
 
 	err := ch.volume.GetMasterVolume(&level)
 	if err != nil {
-		return 0
+		return 0, err
 	}
 
-	return float64(level)
+	return float64(level), nil
 }
 
 func (ch *WindowsChannel) SetVolume(v float64) error {
@@ -97,7 +97,8 @@ func (ch *WindowsChannel) Release() {
 }
 
 func (ch *WindowsChannel) String() string {
-	return fmt.Sprintf("%s: %f", ch.name, ch.GetVolume())
+	volume, _ := ch.GetVolume()
+	return fmt.Sprintf("%s: %f", ch.name, volume)
 }
 
 type WindowsMainChannel struct {
@@ -117,15 +118,15 @@ func (ch *WindowsMainChannel) Name() string {
 	return "Main Volume"
 }
 
-func (ch *WindowsMainChannel) GetVolume() float64 {
+func (ch *WindowsMainChannel) GetVolume() (float64, error) {
 	var volume float32
 
 	err := ch.volume.GetMasterVolumeLevelScalar(&volume)
 	if err != nil {
-		return 0
+		return 0, err
 	}
 
-	return float64(volume)
+	return float64(volume), nil
 }
 
 func (ch *WindowsMainChannel) SetVolume(v float64) error {
@@ -142,5 +143,6 @@ func (ch *WindowsMainChannel) Release() {
 }
 
 func (ch *WindowsMainChannel) String() string {
-	return fmt.Sprintf("Main Channel: %f", ch.GetVolume())
+	volume, _ := ch.GetVolume()
+	return fmt.Sprintf("Main Channel: %f", volume)
 }

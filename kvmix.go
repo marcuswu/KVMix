@@ -45,9 +45,6 @@ func (mix *KVMix) generateConfig() *pb.SmartKnobConfig {
 }
 
 func (mix *KVMix) handleMessage(message *pb.FromSmartKnob) {
-	if mix.configNonce > 0 {
-		log.Debug().Int64("desiredNonce", mix.configNonce).Msg("handleMessage looking for ack")
-	}
 	ack := message.GetAck()
 	if ack != nil {
 		log.Debug().Int64("nonce", int64(ack.Nonce)).Msg("handleMessage got ack")

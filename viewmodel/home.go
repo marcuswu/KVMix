@@ -7,7 +7,6 @@ import (
 	"github.com/marcuswu/KVMix/config"
 	"github.com/marcuswu/KVMix/ddc"
 	"github.com/marcuswu/gosmartknob/pb"
-	"github.com/rs/zerolog/log"
 )
 
 type HomePositions int
@@ -60,6 +59,9 @@ func (hvm *HomeViewModel) getPosition() int32 {
 }
 
 func (hvm *HomeViewModel) setPosition(pos int32) {
+	if len(hvm.positionNames) <= int(pos) {
+		hvm.position = 0
+	}
 	hvm.position = pos
 }
 
@@ -79,7 +81,12 @@ func (hvm *HomeViewModel) HandleMessage(state *pb.SmartKnobState) NavAction {
 		ViewModel:   nil,
 		RegenConfig: false,
 	}
-	ret.RegenConfig = handleNonces(hvm, state)
+	handleNonces(hvm, state)
+	// The knob position has updated
+	if state.CurrentPosition != hvm.getPosition() {
+		hvm.setPosition(state.CurrentPosition)
+		ret.RegenConfig = true
+	}
 	if state.PressNonce != hvm.pressNonce {
 		hvm.pressNonce = state.PressNonce
 		switch hvm.position {
@@ -102,10 +109,7 @@ func (hvm *HomeViewModel) Restore(state *pb.SmartKnobState) {
 }
 
 func (hvm *HomeViewModel) GenerateConfig() *pb.SmartKnobConfig {
-	log.Debug().Int("positions", len(hvm.positionNames)).Msg("Generating home config")
 	return &pb.SmartKnobConfig{
-		Position:             hvm.position,
-		PositionNonce:        hvm.positionNonce,
 		MinPosition:          0,
 		MaxPosition:          int32(len(hvm.positionNames)) - 1,
 		PositionWidthRadians: (30 / 180.0) * math.Pi,
