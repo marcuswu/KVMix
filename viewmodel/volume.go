@@ -63,7 +63,7 @@ func (vvm *VolumeViewModel) setPosition(pos int32) {
 	}
 	log.Debug().Int("volume", int(vvm.position)).Float64("float volume", float64(vvm.position)/100.0).Str("channel", vvm.appChannel.Name()).Msg("Setting volume")
 	vvm.appChannel.SetVolume(float64(vvm.position) / 100.0)
-	vvm.updateVolumeTimer = time.AfterFunc(time.Duration(250)*time.Millisecond, func() {
+	vvm.updateVolumeTimer = time.AfterFunc(time.Duration(300)*time.Millisecond, func() {
 		vvm.updateVolumeTimer = nil
 	})
 }

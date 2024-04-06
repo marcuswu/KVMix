@@ -59,10 +59,10 @@ func (hvm *HomeViewModel) getPosition() int32 {
 }
 
 func (hvm *HomeViewModel) setPosition(pos int32) {
+	hvm.position = pos
 	if len(hvm.positionNames) <= int(pos) {
 		hvm.position = 0
 	}
-	hvm.position = pos
 }
 
 func (hvm *HomeViewModel) getPressNonce() uint32 {

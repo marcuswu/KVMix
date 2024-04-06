@@ -51,10 +51,10 @@ func (cvm *ComputersViewModel) getPosition() int32 {
 }
 
 func (cvm *ComputersViewModel) setPosition(pos int32) {
-	if len(cvm.computers) <= int(pos) {
+	cvm.position = pos
+	if len(cvm.computers) < int(pos) {
 		cvm.position = 0
 	}
-	cvm.position = pos
 }
 
 func (cvm *ComputersViewModel) getPressNonce() uint32 {

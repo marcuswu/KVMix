@@ -1,4 +1,4 @@
 Current:
+ * Need to handle toggling USB switch on computer change
  * Changing volume quickly can make KVMix hang
- * Changing computer does not work (calls DDC, but crashes on OSX)
  * Linux functionality is not started (use github.com/jfreymuth/pulse/proto)

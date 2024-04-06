@@ -50,10 +50,10 @@ func (vavm *VolumeAppViewModel) getPosition() int32 {
 }
 
 func (vavm *VolumeAppViewModel) setPosition(pos int32) {
-	if len(vavm.channels) <= int(pos) {
+	vavm.position = pos
+	if len(vavm.channels) < int(pos) {
 		vavm.position = 0
 	}
-	vavm.position = pos
 }
 
 func (vavm *VolumeAppViewModel) getPressNonce() uint32 {
