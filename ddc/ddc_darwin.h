@@ -7,6 +7,7 @@ bool isIntelHardware();
 IOAVServiceRef findDisplayM1(int index);
 int sendDDCM1(IOAVServiceRef display, unsigned char command, int setValue);
 IOServiceT findDisplayIntel(int index);
+void releaseDisplayIntel(IOServiceT display);
 int sendDDCIntel(IOServiceT display, unsigned char command, int setValue);
 
 #endif

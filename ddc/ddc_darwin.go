@@ -1,6 +1,6 @@
 package ddc
 
-//#cgo CFLAGS: -O0 -x objective-c
+//#cgo CFLAGS: -x objective-c
 //#cgo LDFLAGS: -framework IOKit -framework Foundation -framework CoreGraphics -framework AppKit
 //#import <Foundation/Foundation.h>
 //#import <IOKit/IOKitLib.h>
@@ -32,6 +32,7 @@ func (d *DDCControl) SendCommand(index int, command int, value int) error {
 		if err != 0 {
 			return errors.New("failed to send DDC command")
 		}
+		C.releaseDisplayIntel(display)
 		return nil
 	} else {
 		display := C.findDisplayM1(C.int(index))

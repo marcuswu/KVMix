@@ -1,14 +1,12 @@
 // #import "Darwin"
 #import <Foundation/Foundation.h>
 #import <IOKit/IOKitLib.h>
-#import <IOKit/graphics/IOFramebufferShared.h>
-#import <IOKit/graphics/IOGraphicsLib.h>
 #import <IOKit/i2c/IOI2CInterface.h>
-#import <CoreGraphics/CGDirectDisplay.h>
 #import <CoreGraphics/CGDisplayConfiguration.h>
 #import <AppKit/NSScreen.h>
 #include <sys/sysctl.h>
 
+#include "cocoa_monitor.h"
 #include "ddc_darwin.h"
 
 #define INPUT_SWITCH 0x60
@@ -90,23 +88,33 @@ IOServiceT findDisplayIntel(int index) {
     @autoreleasepool {
         int i = index;
         CGDirectDisplayID screenNumber;
-        for (NSScreen *screen in NSScreen.screens) {
-            if (CGDisplayIsBuiltin(screenNumber)) continue; // Built in displays don't use DDC
-            i--;
-            if (i >= 0) {
-                continue;
-            }
-            NSDictionary *description = [screen deviceDescription];
-            if (![description objectForKey:@"NSDeviceIsScreen"]) {
-                continue;
-            }
-
-            screenNumber = [[description objectForKey:@"NSScreenNumber"] unsignedIntValue];
+        io_service_t framebuffer;
+        NSScreen *screen = [NSScreen.screens objectAtIndex:i];
+        NSDictionary *description = [screen deviceDescription];
+        if (![description objectForKey:@"NSDeviceIsScreen"]) {
+            printf("Could not get description for screen %d\n", index);
+            return 0;
         }
 
-        io_service_t framebuffer = CGDisplayIOServicePort(screenNumber);
+        screenNumber = [[description objectForKey:@"NSScreenNumber"] unsignedIntValue];
+        if (CGDisplayIsBuiltin(screenNumber)) {
+            printf("Screen %d is builtin\n", index);
+            return 0; // Built in displays don't use DDC
+        }
+
+        // CGDisplayIOServicePort is Deprecated
+        // framebuffer = CGDisplayIOServicePort(screenNumber);
+        framebuffer = IOServicePortFromCGDisplayID(screenNumber);
+        if (framebuffer == NULL) {
+            return 0;
+        }
+
         return (IOServiceT) framebuffer;
     }
+}
+
+void releaseDisplayIntel(IOServiceT display) {
+   IOObjectRelease(display); 
 }
 
 bool sendI2CDDC(IOI2CRequest *request, IOServiceT framebuffer) {
