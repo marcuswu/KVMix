@@ -1,6 +1,6 @@
 package ddc
 
-//#cgo CFLAGS: -x objective-c
+//#cgo CFLAGS: -O0 -x objective-c
 //#cgo LDFLAGS: -framework IOKit -framework Foundation -framework CoreGraphics -framework AppKit
 //#import <Foundation/Foundation.h>
 //#import <IOKit/IOKitLib.h>
