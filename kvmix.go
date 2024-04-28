@@ -71,6 +71,10 @@ func (mix *KVMix) handleMessage(message *pb.FromSmartKnob) {
 		}
 		navAction.RegenConfig = true
 	case viewmodel.NavBack:
+		if mix.viewModels[len(mix.viewModels)-1].GenerateConfigBeforeBack() {
+			nonce, _ := mix.smartknob.SendConfig(mix.generateConfig())
+			mix.configNonce = int64(nonce)
+		}
 		mix.viewModels = mix.viewModels[:len(mix.viewModels)-1]
 		// Ensure initial state going back is valid (pressNonce has probably changed)
 		mix.viewModels[len(mix.viewModels)-1].Restore(message.GetSmartknobState())

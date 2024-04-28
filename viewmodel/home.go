@@ -108,6 +108,10 @@ func (hvm *HomeViewModel) Restore(state *pb.SmartKnobState) {
 	restorePosition(hvm, state)
 }
 
+func (hvm *HomeViewModel) GenerateConfigBeforeBack() bool {
+	return false
+}
+
 func (hvm *HomeViewModel) GenerateConfig() *pb.SmartKnobConfig {
 	return &pb.SmartKnobConfig{
 		MinPosition:          0,

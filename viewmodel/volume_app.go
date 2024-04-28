@@ -95,6 +95,10 @@ func (vavm *VolumeAppViewModel) Restore(state *pb.SmartKnobState) {
 	restorePosition(vavm, state)
 }
 
+func (vavm *VolumeAppViewModel) GenerateConfigBeforeBack() bool {
+	return false
+}
+
 func (vavm *VolumeAppViewModel) GenerateConfig() *pb.SmartKnobConfig {
 	title := "Back"
 	if vavm.position > 0 {

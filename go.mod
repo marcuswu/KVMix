@@ -8,7 +8,7 @@ require (
 	github.com/moutend/go-wca v0.3.0
 	github.com/progrium/macdriver v0.4.0
 	github.com/rs/zerolog v1.32.0
-	golang.org/x/sys v0.18.0
+	golang.org/x/sys v0.19.0
 )
 
 require (
@@ -23,7 +23,7 @@ require (
 	github.com/google/go-dap v0.12.0 // indirect
 	github.com/hashicorp/golang-lru v1.0.2 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/marcuswu/gosmartknob v0.0.0-20240401140144-b6833b62fd6a // indirect
+	github.com/marcuswu/gosmartknob v0.0.0-20240407141940-c0990a7912d9 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect

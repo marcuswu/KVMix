@@ -23,6 +23,7 @@ type ViewModel interface {
 	HandleMessage(*pb.SmartKnobState) NavAction
 	Restore(*pb.SmartKnobState)
 	GenerateConfig() *pb.SmartKnobConfig
+	GenerateConfigBeforeBack() bool
 	getNonceSet() bool
 	setNonceSet(bool)
 	getPositionNonce() uint32

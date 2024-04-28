@@ -11,22 +11,26 @@ import (
 )
 
 type ComputersViewModel struct {
-	position      int32
-	positionNonce uint32
-	pressNonce    uint32
-	computers     []config.Computer
-	ddc           ddc.DDC
-	setNonce      bool
+	position       int32
+	positionNonce  uint32
+	pressNonce     uint32
+	pinNonce       uint32
+	computers      []config.Computer
+	ddc            ddc.DDC
+	setNonce       bool
+	updatePinNonce bool
 }
 
 func NewComputersViewModel(computers []config.Computer, ddc ddc.DDC) *ComputersViewModel {
 	return &ComputersViewModel{
-		position:      0,
-		pressNonce:    0,
-		positionNonce: 0,
-		computers:     computers,
-		ddc:           ddc,
-		setNonce:      false,
+		position:       0,
+		pressNonce:     0,
+		pinNonce:       0,
+		positionNonce:  0,
+		computers:      computers,
+		ddc:            ddc,
+		setNonce:       false,
+		updatePinNonce: false,
 	}
 }
 
@@ -73,6 +77,10 @@ func (cvm *ComputersViewModel) HandleMessage(state *pb.SmartKnobState) NavAction
 		ViewModel:   nil,
 		RegenConfig: false,
 	}
+	if !cvm.getNonceSet() {
+		log.Debug().Uint32("nonce", cvm.pinNonce).Msg("Initializing pin nonce")
+		cvm.pinNonce = state.GetConfig().PinNonce
+	}
 	handleNonces(cvm, state)
 	// The knob position has updated
 	if state.CurrentPosition != cvm.getPosition() {
@@ -88,6 +96,8 @@ func (cvm *ComputersViewModel) HandleMessage(state *pb.SmartKnobState) NavAction
 			computer := cvm.computers[cvm.position-1]
 			log.Debug().Int("monitor", computer.MonitorIndex).Int("display", int(computer.Display)).Msg("Setting input source")
 			cvm.ddc.SetInputSource(computer.MonitorIndex, computer.Display)
+			log.Debug().Msg("Switching monitor and setting need nonce change")
+			cvm.updatePinNonce = true
 		}
 	}
 	return ret
@@ -97,10 +107,19 @@ func (cvm *ComputersViewModel) Restore(state *pb.SmartKnobState) {
 	restorePosition(cvm, state)
 }
 
+func (cvm *ComputersViewModel) GenerateConfigBeforeBack() bool {
+	return true
+}
+
 func (cvm *ComputersViewModel) GenerateConfig() *pb.SmartKnobConfig {
 	title := "Back"
 	if cvm.position > 0 {
 		title = fmt.Sprintf("Switch to %s", cvm.computers[cvm.position-1].Name)
+	}
+	if cvm.updatePinNonce {
+		cvm.pinNonce += 1
+		log.Debug().Uint32("nonce", cvm.pinNonce).Msg("Updating pin nonce")
+		cvm.updatePinNonce = false
 	}
 	return &pb.SmartKnobConfig{
 		MinPosition:          0,
@@ -110,5 +129,6 @@ func (cvm *ComputersViewModel) GenerateConfig() *pb.SmartKnobConfig {
 		DetentStrengthUnit:   0.4,
 		SnapPoint:            0.7,
 		Text:                 title,
+		PinNonce:             cvm.pinNonce,
 	}
 }

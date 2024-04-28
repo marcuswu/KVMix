@@ -103,6 +103,10 @@ func (vvm *VolumeViewModel) Restore(state *pb.SmartKnobState) {
 	restorePosition(vvm, state)
 }
 
+func (vvm *VolumeViewModel) GenerateConfigBeforeBack() bool {
+	return false
+}
+
 func (vvm *VolumeViewModel) GenerateConfig() *pb.SmartKnobConfig {
 	title := fmt.Sprintf("Volume for\n%s", vvm.appChannel.Name())
 	return &pb.SmartKnobConfig{
