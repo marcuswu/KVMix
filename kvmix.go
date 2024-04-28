@@ -89,6 +89,8 @@ func (mix *KVMix) handleMessage(message *pb.FromSmartKnob) {
 func (mix *KVMix) handleClosed() {
 	newPort, _ := mix.portOpener()
 	mix.smartknob.SetReadWriter(newPort)
+	nonce, _ := mix.smartknob.SendConfig(mix.generateConfig())
+	mix.configNonce = int64(nonce)
 }
 
 func (mix *KVMix) Stop() {
