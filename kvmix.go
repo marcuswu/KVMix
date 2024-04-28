@@ -2,6 +2,7 @@ package kvmix
 
 import (
 	"io"
+	"time"
 
 	"github.com/marcuswu/KVMix/config"
 	"github.com/marcuswu/KVMix/ddc"
@@ -87,6 +88,8 @@ func (mix *KVMix) handleMessage(message *pb.FromSmartKnob) {
 }
 
 func (mix *KVMix) handleClosed() {
+	// Wait a bit to be nice to CPU
+	time.Sleep(2 * time.Second)
 	newPort, _ := mix.portOpener()
 	mix.smartknob.SetReadWriter(newPort)
 	nonce, _ := mix.smartknob.SendConfig(mix.generateConfig())
