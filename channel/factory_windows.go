@@ -17,69 +17,14 @@ const (
 	NoCurrentProcess      = 0x889000D
 )
 
-var ErrNoProcess = errors.New("No process")
+var ErrNoProcess = errors.New("no process")
 
 type WindowsChannelFactory struct {
 	eventCtx *ole.GUID
-
-	deviceEnumerator    *wca.IMMDeviceEnumerator
-	notificationClient  *wca.IMMNotificationClient
-	deviceChangeTimeout time.Time
-
-	deviceChanged bool
 }
 
 func New() ChannelFactory {
-	cf := WindowsChannelFactory{eventCtx: ole.NewGUID(GUID)}
-
-	err := wca.CoCreateInstance(
-		wca.CLSID_MMDeviceEnumerator,
-		0,
-		wca.CLSCTX_ALL,
-		wca.IID_IMMDeviceEnumerator,
-		&cf.deviceEnumerator,
-	)
-
-	if err != nil {
-		cf.deviceEnumerator = nil
-	}
-
-	cf.notificationClient = wca.NewIMMNotificationClient(wca.IMMNotificationClientCallback{
-		OnDefaultDeviceChanged: func(flow wca.EDataFlow, role wca.ERole, pwstrDeviceId string) error {
-			now := time.Now()
-			if now.Before(cf.deviceChangeTimeout) {
-				return nil
-			}
-
-			cf.deviceChangeTimeout = now.Add(deviceChangeThreshold)
-			cf.deviceChanged = true
-			return nil
-		},
-	})
-
-	err = cf.deviceEnumerator.RegisterEndpointNotificationCallback(cf.notificationClient)
-	if err != nil {
-		cf.notificationClient = nil
-	}
-
-	return cf
-}
-
-func (wcf WindowsChannelFactory) defaultAudioEndpoints() (*wca.IMMDevice, *wca.IMMDevice, error) {
-	var outDevice *wca.IMMDevice
-	var inDevice *wca.IMMDevice
-
-	err := wcf.deviceEnumerator.GetDefaultAudioEndpoint(wca.ERender, wca.EConsole, &outDevice)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get default audio endpoint for output: %w", err)
-	}
-
-	err = wcf.deviceEnumerator.GetDefaultAudioEndpoint(wca.ECapture, wca.EConsole, &inDevice)
-	if err != nil {
-		inDevice = nil
-	}
-
-	return outDevice, inDevice, nil
+	return WindowsChannelFactory{eventCtx: ole.NewGUID(GUID)}
 }
 
 func (wcf WindowsChannelFactory) ChannelsMatching(ids map[string]interface{}) ([]Channel, error) {
@@ -98,48 +43,40 @@ func (wcf WindowsChannelFactory) ChannelsMatching(ids map[string]interface{}) ([
 	}
 	defer ole.CoUninitialize()
 
-	defaultOutputEndpoint, defaultInputEndpoint, err := wcf.defaultAudioEndpoints()
+	var deviceEnumerator *wca.IMMDeviceEnumerator
+	err := wca.CoCreateInstance(
+		wca.CLSID_MMDeviceEnumerator,
+		0,
+		wca.CLSCTX_ALL,
+		wca.IID_IMMDeviceEnumerator,
+		&deviceEnumerator,
+	)
+	if err != nil {
+		return []Channel{}, err
+	}
+	defer deviceEnumerator.Release()
+
+	var defaultOutputEndpoint *wca.IMMDevice
+	err = deviceEnumerator.GetDefaultAudioEndpoint(wca.ERender, wca.EConsole, &defaultOutputEndpoint)
 	if err != nil {
 		return []Channel{}, fmt.Errorf("failed to get default audio endpoints: %w", err)
 	}
 	defer defaultOutputEndpoint.Release()
-
-	if defaultInputEndpoint != nil {
-		defer defaultInputEndpoint.Release()
-	}
 
 	mainOut, err := wcf.getMainChannel(defaultOutputEndpoint)
 	if err != nil {
 		return []Channel{}, fmt.Errorf("failed to get master audio output channel: %w", err)
 	}
 
-	var mainIn Channel = nil
-	if defaultInputEndpoint != nil {
-		mainIn, err = wcf.getMainChannel(defaultInputEndpoint)
-		if err != nil {
-			return []Channel{}, fmt.Errorf("failed to get master audio input channel: %w", err)
-		}
-	}
-
-	appChannels, err := wcf.getChannels(ids)
+	appChannels, err := wcf.getChannels(ids, defaultOutputEndpoint)
 	channels := make([]Channel, 0, len(appChannels)+1)
 	if err != nil {
 		return []Channel{}, fmt.Errorf("enumerate device sessions: %w", err)
 	}
 	channels = append(channels, mainOut)
-	channels = append(channels, mainIn)
 	channels = append(channels, appChannels...)
 
 	return channels, nil
-}
-
-func (wcf WindowsChannelFactory) Release() error {
-
-	if wcf.deviceEnumerator != nil {
-		wcf.deviceEnumerator.Release()
-	}
-
-	return nil
 }
 
 func (wcf WindowsChannelFactory) getMainChannel(device *wca.IMMDevice) (*WindowsMainChannel, error) {
@@ -159,60 +96,28 @@ func (wcf WindowsChannelFactory) getMainChannel(device *wca.IMMDevice) (*Windows
 	return main, nil
 }
 
-func (wcf WindowsChannelFactory) getChannels(ids map[string]interface{}) ([]Channel, error) {
-	var deviceCollection *wca.IMMDeviceCollection
+func (wcf WindowsChannelFactory) getChannels(ids map[string]interface{}, device *wca.IMMDevice) ([]Channel, error) {
+	channels := make([]Channel, 0)
 
-	err := wcf.deviceEnumerator.EnumAudioEndpoints(wca.EAll, wca.DEVICE_STATE_ACTIVE, &deviceCollection)
+	dispatch, err := device.QueryInterface(wca.IID_IMMEndpoint)
 	if err != nil {
-		return []Channel{}, fmt.Errorf("failed to retrieve windows audio endpoints: %w", err)
+		return channels, err
 	}
 
-	var deviceCount uint32
+	endpointType := (*wca.IMMEndpoint)(unsafe.Pointer(dispatch))
+	defer endpointType.Release()
 
-	err = deviceCollection.GetCount(&deviceCount)
-	if err != nil {
-		return []Channel{}, fmt.Errorf("get device count from device collection: %w", err)
+	var dataFlow uint32
+	if err := endpointType.GetDataFlow(&dataFlow); err != nil {
+		return channels, err
 	}
 
-	channels := make([]Channel, 0, deviceCount)
-
-	for deviceIdx := uint32(0); deviceIdx < deviceCount; deviceIdx++ {
-
-		var endpoint *wca.IMMDevice
-
-		err := deviceCollection.Item(deviceIdx, &endpoint)
+	if dataFlow == wca.ERender {
+		deviceChannels, err := wcf.enumerateDeviceChannels(device, ids)
 		if err != nil {
-			continue
+			return channels, err
 		}
-		defer endpoint.Release()
-
-		dispatch, err := endpoint.QueryInterface(wca.IID_IMMEndpoint)
-		if err != nil {
-			continue
-		}
-
-		endpointType := (*wca.IMMEndpoint)(unsafe.Pointer(dispatch))
-		defer endpointType.Release()
-
-		var dataFlow uint32
-		if err := endpointType.GetDataFlow(&dataFlow); err != nil {
-			continue
-		}
-
-		if dataFlow == wca.ERender {
-			deviceChannels, err := wcf.enumerateDeviceChannels(endpoint, ids)
-			if err != nil {
-				continue
-			}
-			channels = append(channels, deviceChannels...)
-		}
-
-		mainChannel, err := wcf.getMainChannel(endpoint)
-		if err != nil {
-			continue
-		}
-
-		channels = append(channels, mainChannel)
+		return deviceChannels, nil
 	}
 
 	return channels, nil
@@ -300,6 +205,8 @@ func (wcf WindowsChannelFactory) enumerateDeviceChannels(
 		_, pnameOk := ids[newChannel.processName]
 		if nameOk || pnameOk {
 			channels = append(channels, newChannel)
+			delete(ids, newChannel.name)
+			delete(ids, newChannel.processName)
 		}
 	}
 
